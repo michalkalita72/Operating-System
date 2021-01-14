@@ -1,0 +1,120 @@
+MP3 Bugs:
+
+CHECKPOINT 1:
+GDT: None
+
+PIC:
+    B: After initalization the program crashed
+    S: Had the wrong ports for some of the control words    
+
+KEYBOARD:
+    B: Would not enter keyboard handler
+    S: In our enable_irq we were sending the irq masks to the wrong ports, we fixed it and the handler was called
+
+    B: Keyboard handler would print random character on key release
+    S: We found out the max hex number for down button press data coming for the keyboard, so before we print anything we make sure the data is in range
+
+RTC:
+    B:Didn't get the interrupt from the RTC
+    S:Had the commands for outb switched
+
+    B:Couldn't get the rtc interrupt to display garbage onto the screen
+    S:Forgot that we needed the test_interrupt function within the handler
+
+PAGING:
+    B:Paging assembly code is causing the system to boot loop
+    S:Switched the order of enabling the cr register fixed it. Had enable paging in the cr first then enabling the 4mbs.
+
+CHECKPOINT 2:
+
+RTC DRIVER:
+    B: RTC_read would get a page fault whenever an RTC interrupt was handled
+    S: I changed several things but I think what fixed it was not calling the global "handled" variable directly in the while loop
+     
+KEYBOARD_TERMINAL:
+    B: Page faulting
+    S: I started using memcpy instead of using a for loop to set them. This was probably just a off by one error in my loop though.
+
+    B: Screen printed garbage once we got past the last character in the last line
+    S: Fixed it by clearing the last line while shifting everything up in video memory
+
+    B: Getting page fault after putting in more than 127 characters
+    S: Had the counter in a while loop which accessed numbers larger than 127
+
+FILE_SYSTEM:
+    B: Page faulting in the helper function read by index and by name
+    S: Decided to completly redo it since we were trying to manually index everything and instead changed to casting by structs which fixed most of the problems
+    
+    B: Not printing the data correctly
+    S: Set the address wrong off by one 4kb block
+
+    B: File was opening inputs that had more then 32 characters
+    S: Added a case statement in the file read function to return -1 if strlen is greater than 32
+
+    B: Read dentry by index is printing an extra index
+    S: Off by one error in the invalid check
+
+
+
+
+
+CHECKPOINT 3:
+    B: File wasn't parsing correctly when we were using a modified version of the one in ece_391 execute
+    S: Completly rewrote it using our own logic and it worked
+
+    B: Page fault with mem address in system_call.S
+    S: The mem address went from 0x083FFFFF to 0x083FFFFC
+
+    B: Page Fault in System Execute
+    S: Found out the problem was the system handler
+
+    B: Page Fault in context switch
+    S: Found out the problem was the system handler and gdb is shit
+
+    B: General Protection error
+    S: Pushing all register but wasn t suppose to push eax so manually pushed them
+
+    B: Page fault after iret in system calls
+    S: Fixed by decrementing process num so we weren't loading the 
+    correct value in tss.esp0 and adding an assembly linkage file
+    for the keyboard terminal. 
+
+
+CHECKPOINT 4:
+
+    B: Getting a page fault in the system close function  
+    S: We were setting the file operations table pointer to NULL before calling write on it
+
+    B: getting page fault if offset is greater than the inode length
+    S: returned 0 instead of -1 if this if statement was true
+
+    B: Sys open lot for syserr failed
+    S: Our bounds we off by one so it didnt open all 7 and only open 6 in system open
+    
+    B: pinpong was adding an extra newline each time it printed a line
+    S: Changed a <= to a < in our putc function
+
+
+CHECKPOINT 5:
+
+    B: Page faulting when I switched terminal initially when I was using a boot with all three shells
+    S: Change how we implemented booting to opening it one alt + function key 
+
+    B: Weird paging faulting when running something in a new terminal for the first time
+    S: Our read data was overriding the entire stack, so we had to change our inode object in that to an inode pointer
+    
+    B: After terminal switch keyboard didnt work
+    S: send_eoi before the terminal switch fixed that
+
+    B: when exiting base shell, wasn't resetting the base shell num back to active
+    S: reset this value in sys_execute line 204 of system_handler.c
+
+    B: When trying to switch terminals with PIT enabled and initialized, either terminal 2 or 3 would 
+    be in the wrong address when switching from terminal 1 for the first time.
+    S: Decreased the frequency of PIT when terminal 2 and 3 are first initialized, then initialized PIT 
+
+    B: A lot of page faulting when trying to execute the programs with scheduling
+    S: Off by one error when setting the pcb address initially and the esp0
+
+    //B: Spelled terminal as termianl
+    //S: googled spelling ;)
